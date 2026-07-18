@@ -1646,10 +1646,10 @@ html, body {
   width: 100%;
 }
 #scroll-container {
-  height: 100vh;
+  min-height: 100vh;
   width: 100%;
-  overflow-y: scroll;
-  scroll-snap-type: y mandatory;
+  overflow-y: auto;
+  scroll-snap-type: y proximity;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
@@ -1662,11 +1662,10 @@ html, body {
   scrollbar-width: none;
 }
 .slide {
-  height: 100vh !important;
+  height: auto !important;
   min-height: 100vh !important;
-  max-height: 100vh !important;
   scroll-snap-align: start;
-  overflow: hidden;
+  overflow: visible !important;
   box-sizing: border-box;
 }
 
@@ -4866,11 +4865,7 @@ document.addEventListener('keydown', function(e) {
     dot.className = 'dot';
     dot.title = 'Page ' + (i + 1);
     dot.addEventListener('click', function() {
-      if (isMobile) {
-        container.scrollTo({ top: getSlideTop(slide), behavior: 'smooth' });
-      } else {
-        container.scrollTo({ top: i * window.innerHeight, behavior: 'smooth' });
-      }
+      container.scrollTo({ top: getSlideTop(slide), behavior: 'smooth' });
     });
     nav.appendChild(dot);
   });
@@ -4903,17 +4898,13 @@ document.addEventListener('keydown', function(e) {
   function updateActive() {
     var scrollTop = getScrollTop();
     var currentIndex;
-    if (isMobile) {
-      // Find which slide section we're closest to
-      currentIndex = 0;
-      for (var j = 0; j < slides.length; j++) {
-        if (scrollTop >= getSlideTop(slides[j]) - window.innerHeight * 0.4) {
-          currentIndex = j;
-        }
+    // 统一使用 getSlideTop 查找当前激活的 slide
+    currentIndex = 0;
+    for (var j = 0; j < slides.length; j++) {
+      var slideTop = getSlideTop(slides[j]);
+      if (scrollTop >= slideTop - window.innerHeight * 0.3) {
+        currentIndex = j;
       }
-    } else {
-      var vh = window.innerHeight;
-      currentIndex = Math.min(Math.round(scrollTop / vh), slides.length - 1);
     }
     
     dots.forEach(function(dot, i) {
@@ -4934,15 +4925,20 @@ document.addEventListener('keydown', function(e) {
   // Keyboard navigation
   document.addEventListener('keydown', function(e) {
     if (isMobile) return; // Mobile uses natural scroll, no keyboard interception
-    var vh = window.innerHeight;
     var scrollTop = container.scrollTop;
-    var currentIndex = Math.round(scrollTop / vh);
+    // Find current slide
+    var currentIndex = 0;
+    for (var j = 0; j < slides.length; j++) {
+      if (scrollTop >= getSlideTop(slides[j]) - window.innerHeight * 0.3) {
+        currentIndex = j;
+      }
+    }
     if (e.key === 'ArrowDown' || e.key === 'PageDown') {
       e.preventDefault();
-      if (currentIndex < slides.length - 1) container.scrollTo({ top: (currentIndex + 1) * vh, behavior: 'smooth' });
+      if (currentIndex < slides.length - 1) container.scrollTo({ top: getSlideTop(slides[currentIndex + 1]), behavior: 'smooth' });
     } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
       e.preventDefault();
-      if (currentIndex > 0) container.scrollTo({ top: (currentIndex - 1) * vh, behavior: 'smooth' });
+      if (currentIndex > 0) container.scrollTo({ top: getSlideTop(slides[currentIndex - 1]), behavior: 'smooth' });
     } else if (e.key === 'Home') {
       e.preventDefault();
       container.scrollTo({ top: 0, behavior: 'smooth' });
@@ -5050,43 +5046,7 @@ setTimeout(function(){
 }, 500);
 </script>
 
-<script>
-// ===== 方案A: 全平台 slide-inner transform scale 自适应 =====
-(function(){
-  function scaleSlides(){
-    // 手机端不执行scale，仅桌面端使用
-    if(window.innerWidth <= 768) return;
-    var slides = document.querySelectorAll('.slide');
-    var vh = window.innerHeight;
-    slides.forEach(function(slide){
-      var inner = slide.querySelector('.slide-inner');
-      if(!inner) return;
-      // 临时解除overflow:hidden以测量真实高度
-      var origOverflow = slide.style.overflow;
-      slide.style.overflow = 'visible';
-      var innerH = inner.scrollHeight;
-      slide.style.overflow = origOverflow;
-      var threshold = vh - 10;
-      if(innerH > threshold){
-        var scale = threshold / innerH;
-        scale = Math.max(scale, 0.4);
-        inner.style.transform = 'scale(' + scale + ')';
-        inner.style.transformOrigin = 'top center';
-      } else {
-        inner.style.transform = '';
-        inner.style.transformOrigin = '';
-      }
-    });
-  }
-  // 延迟执行，等待字体和图表渲染
-  window.addEventListener('load', function(){ setTimeout(scaleSlides, 800); });
-  window.addEventListener('resize', function(){ setTimeout(scaleSlides, 200); });
-  // 初始化也执行一次
-  setTimeout(scaleSlides, 1500);
-  // 额外延迟，确保ECharts渲染完成后重新缩放
-  setTimeout(scaleSlides, 3000);
-})();
-</script>
+
 
 
 
