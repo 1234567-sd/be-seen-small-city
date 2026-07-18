@@ -1637,21 +1637,17 @@ body {
 }
 
 
-/* === FULL PAGE SNAP SCROLL === */
+/* === PAGE LAYOUT === */
 html, body {
   margin: 0;
   padding: 0;
-  overflow: hidden;
-  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
   width: 100%;
 }
+html { scroll-behavior: smooth; }
 #scroll-container {
-  min-height: 100vh;
   width: 100%;
-  overflow-y: auto;
-  scroll-snap-type: y proximity;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
 }
 #scroll-container::-webkit-scrollbar {
   width: 0;
@@ -1664,7 +1660,6 @@ html, body {
 .slide {
   height: auto !important;
   min-height: 100vh !important;
-  scroll-snap-align: start;
   overflow: visible !important;
   box-sizing: border-box;
 }
@@ -4848,24 +4843,13 @@ document.addEventListener('keydown', function(e) {
   var slides = container.querySelectorAll('.slide');
   var nav = document.createElement('div');
   nav.id = 'page-nav';
-  var isMobile = window.innerWidth <= 768;
-  
-  function getSlideTop(slide) {
-    var top = 0;
-    var el = slide;
-    while (el && el !== container) {
-      top += el.offsetTop || 0;
-      el = el.offsetParent;
-    }
-    return top;
-  }
   
   slides.forEach(function(slide, i) {
     var dot = document.createElement('div');
     dot.className = 'dot';
     dot.title = 'Page ' + (i + 1);
     dot.addEventListener('click', function() {
-      container.scrollTo({ top: getSlideTop(slide), behavior: 'smooth' });
+      slide.scrollIntoView({ behavior: 'smooth' });
     });
     nav.appendChild(dot);
   });
@@ -4885,24 +4869,12 @@ document.addEventListener('keydown', function(e) {
   
   var dots = nav.querySelectorAll('.dot');
   
-  // Listen to correct scroll source per mode
-  var scrollTarget = isMobile ? window : container;
-  
-  function getScrollTop() {
-    if (isMobile) {
-      return window.pageYOffset || document.documentElement.scrollTop || 0;
-    }
-    return container.scrollTop;
-  }
-  
   function updateActive() {
-    var scrollTop = getScrollTop();
-    var currentIndex;
-    // 统一使用 getSlideTop 查找当前激活的 slide
-    currentIndex = 0;
+    var scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+    var currentIndex = 0;
     for (var j = 0; j < slides.length; j++) {
-      var slideTop = getSlideTop(slides[j]);
-      if (scrollTop >= slideTop - window.innerHeight * 0.3) {
+      var rect = slides[j].getBoundingClientRect();
+      if (rect.top <= window.innerHeight * 0.4) {
         currentIndex = j;
       }
     }
@@ -4911,7 +4883,6 @@ document.addEventListener('keydown', function(e) {
       dot.classList.toggle('active', i === currentIndex);
     });
     
-    // Hide hint after first scroll
     if (currentIndex > 0) {
       hint.style.opacity = '0';
     } else {
@@ -4919,32 +4890,23 @@ document.addEventListener('keydown', function(e) {
     }
   }
   
-  scrollTarget.addEventListener('scroll', updateActive, { passive: true });
+  window.addEventListener('scroll', updateActive, { passive: true });
   updateActive();
   
   // Keyboard navigation
   document.addEventListener('keydown', function(e) {
-    if (isMobile) return; // Mobile uses natural scroll, no keyboard interception
-    var scrollTop = container.scrollTop;
-    // Find current slide
-    var currentIndex = 0;
-    for (var j = 0; j < slides.length; j++) {
-      if (scrollTop >= getSlideTop(slides[j]) - window.innerHeight * 0.3) {
-        currentIndex = j;
-      }
-    }
     if (e.key === 'ArrowDown' || e.key === 'PageDown') {
       e.preventDefault();
-      if (currentIndex < slides.length - 1) container.scrollTo({ top: getSlideTop(slides[currentIndex + 1]), behavior: 'smooth' });
+      window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
     } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
       e.preventDefault();
-      if (currentIndex > 0) container.scrollTo({ top: getSlideTop(slides[currentIndex - 1]), behavior: 'smooth' });
+      window.scrollBy({ top: -window.innerHeight * 0.8, behavior: 'smooth' });
     } else if (e.key === 'Home') {
       e.preventDefault();
-      container.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (e.key === 'End') {
       e.preventDefault();
-      container.scrollTo({ top: (slides.length - 1) * vh, behavior: 'smooth' });
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
   });
 })();
