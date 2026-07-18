@@ -1637,17 +1637,21 @@ body {
 }
 
 
-/* === PAGE LAYOUT === */
+/* === FULL PAGE SNAP SCROLL === */
 html, body {
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
+  height: 100%;
   width: 100%;
 }
-html { scroll-behavior: smooth; }
 #scroll-container {
+  height: 100vh;
   width: 100%;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 #scroll-container::-webkit-scrollbar {
   width: 0;
@@ -1658,9 +1662,11 @@ html { scroll-behavior: smooth; }
   scrollbar-width: none;
 }
 .slide {
-  height: auto !important;
+  height: 100vh !important;
   min-height: 100vh !important;
-  overflow: visible !important;
+  max-height: 100vh !important;
+  scroll-snap-align: start;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -2551,11 +2557,11 @@ html { scroll-behavior: smooth; }
         <!-- 右侧：水墨遮罩图片 -->
         <div class="fade-in" style="width:480px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding-top:2rem">
           <div style="width:440px;height:320px;-webkit-mask-image:radial-gradient(ellipse 55% 55% at 50% 50%, #000 15%, rgba(0,0,0,0.5) 38%, rgba(0,0,0,0.12) 58%, transparent 78%);mask-image:radial-gradient(ellipse 55% 55% at 50% 50%, #000 15%, rgba(0,0,0,0.5) 38%, rgba(0,0,0,0.12) 58%, transparent 78%)">
-            <img src="https://www.coze.cn/s/Pa0HLlDyJTw/" alt="传统夜市俯瞰" style="width:100%;height:100%;object-fit:cover;display:block">
+            <img src="img1.jpg" alt="传统夜市俯瞰" style="width:100%;height:100%;object-fit:cover;display:block">
           </div>
           <p style="font-size:0.65rem;color:#9a9070;letter-spacing:0.05em;margin:0 auto;text-align:center;opacity:0.7">图片为AI生成 · 仅作展示</p>
           <div style="width:460px;height:340px;margin-top:-1.5rem;-webkit-mask-image:radial-gradient(ellipse 55% 55% at 50% 50%, #000 15%, rgba(0,0,0,0.5) 38%, rgba(0,0,0,0.12) 58%, transparent 78%);mask-image:radial-gradient(ellipse 55% 55% at 50% 50%, #000 15%, rgba(0,0,0,0.5) 38%, rgba(0,0,0,0.12) 58%, transparent 78%)">
-            <img src="https://www.coze.cn/s/2xs7AxQqxz0/" alt="钟楼墨雾环绕" style="width:100%;height:100%;object-fit:cover;display:block">
+            <img src="img2.jpg" alt="钟楼墨雾环绕" style="width:100%;height:100%;object-fit:cover;display:block">
           </div>
         </div>
       </div>
@@ -4849,7 +4855,7 @@ document.addEventListener('keydown', function(e) {
     dot.className = 'dot';
     dot.title = 'Page ' + (i + 1);
     dot.addEventListener('click', function() {
-      slide.scrollIntoView({ behavior: 'smooth' });
+      container.scrollTo({ top: i * window.innerHeight, behavior: 'smooth' });
     });
     nav.appendChild(dot);
   });
@@ -4870,14 +4876,9 @@ document.addEventListener('keydown', function(e) {
   var dots = nav.querySelectorAll('.dot');
   
   function updateActive() {
-    var scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
-    var currentIndex = 0;
-    for (var j = 0; j < slides.length; j++) {
-      var rect = slides[j].getBoundingClientRect();
-      if (rect.top <= window.innerHeight * 0.4) {
-        currentIndex = j;
-      }
-    }
+    var scrollTop = container.scrollTop;
+    var vh = window.innerHeight;
+    var currentIndex = Math.min(Math.round(scrollTop / vh), slides.length - 1);
     
     dots.forEach(function(dot, i) {
       dot.classList.toggle('active', i === currentIndex);
@@ -4895,18 +4896,21 @@ document.addEventListener('keydown', function(e) {
   
   // Keyboard navigation
   document.addEventListener('keydown', function(e) {
+    var vh = window.innerHeight;
+    var scrollTop = container.scrollTop;
+    var currentIndex = Math.round(scrollTop / vh);
     if (e.key === 'ArrowDown' || e.key === 'PageDown') {
       e.preventDefault();
-      window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
+      if (currentIndex < slides.length - 1) container.scrollTo({ top: (currentIndex + 1) * vh, behavior: 'smooth' });
     } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
       e.preventDefault();
-      window.scrollBy({ top: -window.innerHeight * 0.8, behavior: 'smooth' });
+      if (currentIndex > 0) container.scrollTo({ top: (currentIndex - 1) * vh, behavior: 'smooth' });
     } else if (e.key === 'Home') {
       e.preventDefault();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      container.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (e.key === 'End') {
       e.preventDefault();
-      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      container.scrollTo({ top: (slides.length - 1) * vh, behavior: 'smooth' });
     }
   });
 })();
